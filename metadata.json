@@ -1,0 +1,6 @@
+{
+  "name": "CampusFlow",
+  "description": "AI-powered college event and task management platform that turns event ideas into structured plans, deadlines, and automated workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
