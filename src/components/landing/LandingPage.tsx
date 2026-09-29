@@ -245,6 +245,49 @@ export const LandingPage: React.FC<Props> = ({ onOpenCreate }) => {
             </div>
           </div>
         </div>
+
+        {/* n8n Workflow Agent Live Integration Banner */}
+        <div className="mt-8 p-6 rounded-3xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-stone-700">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#EA4B71] to-[#FF6B4A] flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
+              n8n
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                  Live Cloud Agent Connected
+                </span>
+                <span className="text-xs text-stone-400">hasinich.app.n8n.cloud</span>
+              </div>
+              <h3 className="font-heading font-bold text-lg text-white">
+                Powered by your custom n8n AI Agent Workflow
+              </h3>
+              <p className="text-xs text-stone-300 mt-1 max-w-xl leading-relaxed">
+                Connect your event management workflows to n8n triggers. Click the floating widget in the bottom-right corner or open the AI Co-Pilot to converse with your autonomous n8n agent directly.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href="https://hasinich.app.n8n.cloud/webhook/4e208ad8-a989-4e3a-88e6-b74c707abc06/chat"
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 text-xs font-semibold transition-all"
+            >
+              View Webhook
+            </a>
+            <button
+              onClick={() => {
+                const widgetBtn = document.querySelector('button[aria-label="Toggle n8n Agent Chat"]') as HTMLButtonElement;
+                if (widgetBtn) widgetBtn.click();
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#EA4B71] to-[#FF6B4A] hover:opacity-95 text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
+            >
+              Open n8n Chat 💬
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* How It Works Section */}

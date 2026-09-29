@@ -18,6 +18,7 @@ import {
 export const StandaloneAssistantPage: React.FC = () => {
   const { events, currentEvent, setSelectedEventId, executeToolCall, showToast } = useEvents();
 
+  const [engine, setEngine] = useState<'gemini' | 'n8n'>('n8n');
   const [selectedEvtId, setSelectedEvtId] = useState(currentEvent?.id || events[0]?.id || '');
   const activeEvt = events.find(e => e.id === selectedEvtId) || currentEvent;
 
@@ -25,7 +26,7 @@ export const StandaloneAssistantPage: React.FC = () => {
     {
       id: 'init-msg',
       role: 'assistant',
-      content: `👋 Welcome to the **CampusFlow AI Assistant**. I have context on your events and tasks. You can ask me:\n\n* "What should we finish today?"\n* "Which tasks are overdue?"\n* "Create a reminder message for the volunteers"\n* "Give me a short progress report"\n* "Mark the poster task as completed" (AI will execute tool call)`,
+      content: `👋 Welcome! I am connected to your **n8n AI Workflow Agent** (hosted on \`hasinich.app.n8n.cloud\`). You can also switch to the Gemini co-pilot using the toggle above.\n\nAsk me anything about planning events, tracking tasks, organizing volunteers, or preparing fests!`,
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -61,6 +62,32 @@ export const StandaloneAssistantPage: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+
+    if (engine === 'n8n') {
+      try {
+        const res = await api.sendN8nMessage(text, `standalone-${selectedEvtId || 'main'}`);
+        const assistantMsg: ChatMessage = {
+          id: `ast-${Date.now()}`,
+          role: 'assistant',
+          content: res.output,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+      } catch (err: any) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: 'assistant',
+            content: `⚠️ Could not reach n8n agent: ${err.message || 'Please check workflow connection.'}`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       const response = await api.askAssistant({
@@ -121,24 +148,51 @@ export const StandaloneAssistantPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Event Context Switcher */}
-        <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-2xl border border-stone-200/90 shadow-2xs">
-          <FolderKanban className="w-4 h-4 text-stone-400" />
-          <span className="text-xs font-semibold text-stone-700">Context:</span>
-          <select
-            value={selectedEvtId}
-            onChange={e => {
-              setSelectedEvtId(e.target.value);
-              setSelectedEventId(e.target.value);
-            }}
-            className="text-xs font-bold text-stone-900 bg-transparent focus:outline-hidden cursor-pointer"
-          >
-            {events.map(e => (
-              <option key={e.id} value={e.id}>
-                {e.title} ({e.progress}%)
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Agent Selector (n8n vs Gemini) */}
+          <div className="flex items-center p-1 bg-stone-200/70 rounded-2xl">
+            <button
+              onClick={() => setEngine('n8n')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                engine === 'n8n'
+                  ? 'bg-gradient-to-r from-[#EA4B71] to-[#FF6B4A] text-white shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <span>⚡ n8n Agent</span>
+              <span className="text-[9px] px-1 py-0.2 bg-white/25 rounded-sm">Webhook</span>
+            </button>
+            <button
+              onClick={() => setEngine('gemini')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                engine === 'gemini'
+                  ? 'bg-[#4E785F] text-white shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <span>Gemini 2.5</span>
+            </button>
+          </div>
+
+          {/* Event Context Switcher */}
+          <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-2xl border border-stone-200/90 shadow-2xs">
+            <FolderKanban className="w-4 h-4 text-stone-400" />
+            <span className="text-xs font-semibold text-stone-700">Context:</span>
+            <select
+              value={selectedEvtId}
+              onChange={e => {
+                setSelectedEvtId(e.target.value);
+                setSelectedEventId(e.target.value);
+              }}
+              className="text-xs font-bold text-stone-900 bg-transparent focus:outline-hidden cursor-pointer"
+            >
+              {events.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.title} ({e.progress}%)
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

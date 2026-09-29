@@ -24,11 +24,12 @@ interface Props {
 export const AIAssistantDrawer: React.FC<Props> = ({ event, isOpen, onClose }) => {
   const { executeToolCall, showToast } = useEvents();
 
+  const [engine, setEngine] = useState<'gemini' | 'n8n'>('n8n');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-init',
       role: 'assistant',
-      content: `Hello! I'm your **CampusFlow Co-Pilot** for **${event.title}**. You can ask me what needs to be finished today, request overdue task breakdowns, draft reminder messages for volunteers, or ask me to mark tasks completed!`,
+      content: `Hello! I am your AI Co-Pilot for **${event.title}**, connected to your **n8n AI Agent** (\`hasinich.app.n8n.cloud\`). You can also switch to Gemini 2.5 using the top toggle.\n\nAsk me what to prioritize today, request volunteer reminders, or discuss event logistics!`,
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -66,6 +67,35 @@ export const AIAssistantDrawer: React.FC<Props> = ({ event, isOpen, onClose }) =
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+
+    if (engine === 'n8n') {
+      try {
+        const res = await api.sendN8nMessage(
+          `[Event: ${event.title}, Date: ${event.date}, Progress: ${event.progress}%] ${text}`,
+          `event-drawer-${event.id}`
+        );
+        const assistantMsg: ChatMessage = {
+          id: `msg-resp-${Date.now()}`,
+          role: 'assistant',
+          content: res.output,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+      } catch (err: any) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `msg-err-${Date.now()}`,
+            role: 'assistant',
+            content: `⚠️ Could not reach n8n agent: ${err.message || 'Please check workflow connection.'}`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       const response = await api.askAssistant({
@@ -116,29 +146,57 @@ export const AIAssistantDrawer: React.FC<Props> = ({ event, isOpen, onClose }) =
   return (
     <div className="fixed inset-y-0 right-0 w-full sm:w-96 md:w-[420px] bg-white border-l border-stone-200/90 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
       {/* Header */}
-      <div className="p-4 border-b border-stone-200/80 bg-[#FAF9F5] flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#4E785F] text-white flex items-center justify-center shadow-2xs">
-            <Bot className="w-4 h-4" />
+      <div className="p-4 border-b border-stone-200/80 bg-[#FAF9F5] space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs text-white ${
+              engine === 'n8n' ? 'bg-gradient-to-tr from-[#EA4B71] to-[#FF6B4A]' : 'bg-[#4E785F]'
+            }`}>
+              <Bot className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-heading font-bold text-sm text-stone-900 flex items-center gap-1.5">
+                <span>{engine === 'n8n' ? 'n8n Workflow Agent' : 'Gemini Co-Pilot'}</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold">
+                  Active
+                </span>
+              </h3>
+              <p className="text-[11px] text-stone-500 truncate max-w-[200px]">
+                {event.title}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-heading font-bold text-sm text-stone-900 flex items-center gap-1.5">
-              <span>Event AI Co-Pilot</span>
-              <span className="text-[10px] bg-[#EAE8E0] text-[#2F4A38] px-1.5 py-0.2 rounded-full font-bold">
-                Context-Aware
-              </span>
-            </h3>
-            <p className="text-[11px] text-stone-500 truncate max-w-[200px]">
-              {event.title}
-            </p>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+
+        {/* Engine Switcher */}
+        <div className="flex items-center p-1 bg-stone-200/70 rounded-xl">
+          <button
+            onClick={() => setEngine('n8n')}
+            className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              engine === 'n8n'
+                ? 'bg-gradient-to-r from-[#EA4B71] to-[#FF6B4A] text-white shadow-2xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            ⚡ n8n Agent (Cloud)
+          </button>
+          <button
+            onClick={() => setEngine('gemini')}
+            className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+              engine === 'gemini'
+                ? 'bg-[#4E785F] text-white shadow-2xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Gemini 2.5
+          </button>
+        </div>
       </div>
 
       {/* Suggested Quick Chips */}

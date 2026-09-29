@@ -27,6 +27,11 @@ CampusFlow transforms messy natural language event ideas into structured, action
    - `runDailyAutomation()` monitors approaching milestones and flags overdue tasks.
    - Calculates real-time system health scores (0-100).
    - Configured for automated daily execution via Vercel Cron (`cron.json` / `vercel.json`).
+6. **n8n AI Workflow Agent Integration**:
+   - Webhook: `https://hasinich.app.n8n.cloud/webhook/4e208ad8-a989-4e3a-88e6-b74c707abc06/chat`
+   - Floating interactive chat widget on all pages with conversation memory and quick prompts.
+   - Server-side proxy at `POST /api/n8n/chat` with automatic direct fallback.
+   - Dual-engine support in both the standalone Co-Pilot workspace and in-event drawers.
 
 ---
 

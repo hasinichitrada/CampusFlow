@@ -85,4 +85,58 @@ export const api = {
     const res = await fetch('/api/health');
     return await res.json();
   },
+
+  /**
+   * Send a chat message to the n8n AI Agent webhook
+   */
+  async sendN8nMessage(message: string, sessionId?: string): Promise<{ output: string }> {
+    const directWebhookUrl =
+      'https://hasinich.app.n8n.cloud/webhook/4e208ad8-a989-4e3a-88e6-b74c707abc06/chat';
+
+    try {
+      // First try via local backend proxy
+      const res = await fetch('/api/n8n/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatInput: message, sessionId }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          output:
+            data.output ||
+            data.response ||
+            data.text ||
+            (typeof data === 'string' ? data : JSON.stringify(data)),
+        };
+      }
+    } catch (e) {
+      console.warn('Backend proxy unreachable, falling back to direct n8n webhook', e);
+    }
+
+    // Direct fallback
+    const directRes = await fetch(directWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatInput: message,
+        sessionId: sessionId || 'campusflow-web-session',
+      }),
+    });
+
+    if (!directRes.ok) {
+      const err = await directRes.text().catch(() => 'n8n webhook error');
+      throw new Error(`n8n Agent error: ${directRes.status} - ${err}`);
+    }
+
+    const data = await directRes.json();
+    return {
+      output:
+        data.output ||
+        data.response ||
+        data.text ||
+        (typeof data === 'string' ? data : JSON.stringify(data)),
+    };
+  },
 };

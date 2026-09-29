@@ -12,6 +12,7 @@ import { AutomationHub } from './components/automation/AutomationHub';
 import { StandaloneAssistantPage } from './components/assistant/StandaloneAssistantPage';
 import { CreateEventModal } from './components/events/CreateEventModal';
 import { Toast } from './components/common/Toast';
+import { N8nChatWidget } from './components/common/N8nChatWidget';
 
 const MainAppContent: React.FC = () => {
   const { activeTab, setActiveTab } = useEvents();
@@ -65,6 +66,7 @@ const MainAppContent: React.FC = () => {
           onClose={() => setCreateModalOpen(false)}
         />
         <Toast />
+        <N8nChatWidget />
       </div>
     );
   }
@@ -103,6 +105,7 @@ const MainAppContent: React.FC = () => {
         onClose={() => setCreateModalOpen(false)}
       />
       <Toast />
+      <N8nChatWidget />
     </div>
   );
 };

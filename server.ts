@@ -527,6 +527,52 @@ app.post('/api/automation/daily-check', (req: Request, res: Response) => {
   res.json(result);
 });
 
+// 4. n8n AI Agent Webhook Proxy Endpoint
+const N8N_WEBHOOK_URL =
+  process.env.N8N_WEBHOOK_URL ||
+  'https://hasinich.app.n8n.cloud/webhook/4e208ad8-a989-4e3a-88e6-b74c707abc06/chat';
+
+app.post('/api/n8n/chat', async (req: Request, res: Response) => {
+  const { message, chatInput, sessionId, context } = req.body;
+  const textToSend = chatInput || message || '';
+
+  if (!textToSend.trim()) {
+    return res.status(400).json({ error: 'Message or chatInput is required.' });
+  }
+
+  try {
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chatInput: textToSend,
+        sessionId: sessionId || 'campusflow-web-session',
+        context: context || {},
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('n8n webhook error response:', errText);
+      return res.status(response.status).json({
+        error: `n8n webhook responded with status ${response.status}`,
+        details: errText,
+      });
+    }
+
+    const data = await response.json();
+    return res.json(data);
+  } catch (err: any) {
+    console.error('Failed to proxy to n8n webhook:', err);
+    return res.status(500).json({
+      error: 'Failed to communicate with n8n agent webhook.',
+      details: err.message,
+    });
+  }
+});
+
 // Setup Vite middleware in dev or static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
